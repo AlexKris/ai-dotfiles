@@ -131,77 +131,6 @@
             "command": "node -e \"const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); const cmd=d.tool_input?.command||''; if(/^git\\s+push/.test(cmd)){console.error('[Hook] WARNING: About to git push. Verify branch and remote are correct.');}\""
           }
         ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/scripts/hooks/doc-file-warning.js"
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/scripts/hooks/suggest-compact.js"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/scripts/hooks/post-edit-console-warn.js"
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/scripts/hooks/post-edit-console-warn.js"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/scripts/hooks/context-refresh.js"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/scripts/hooks/session-context.js"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/scripts/hooks/check-console-log.js"
-          }
-        ]
       }
     ]
   },
@@ -229,7 +158,6 @@
 
 - **安全权限白名单**：allow 只放行安全的 bash 命令和 git 操作
 - **安全拒绝规则**：deny 阻止 `rm -rf`、`curl|bash` 管道执行、SSH/SCP 远程访问、读取 `.ssh`/`.aws`/`.env`/`credentials` 等敏感文件
-- **5 类 Hooks**：SessionStart / UserPromptSubmit / PreToolUse / PostToolUse / Stop，覆盖完整生命周期
 - **git push 内联警告**：PreToolUse(Bash) 拦截 git push 并提醒确认分支和远程
 - **Agent Teams 实验特性**：通过环境变量开启多 agent 协作
 - **去除 Co-authored-by**：commit 信息不带 Claude 署名
@@ -324,7 +252,7 @@ printf "%s" "$parts"
 | out:Xk | 总输出 token 数（千） |
 | $X.XX | 本次会话累计费用 |
 
-**桥接机制**：StatusLine 同时将 `used_percentage` 写入临时文件 `$TMPDIR/claude-context-pct-${session_id}`，供 PreToolUse hook 读取。因为 PreToolUse 的 stdin 不包含 `context_window` 数据，需要通过 StatusLine 做桥接。
+**备注**：StatusLine 同时将 `used_percentage` 写入临时文件 `$TMPDIR/claude-context-pct-${session_id}`，可供自定义脚本读取上下文使用率。
 
 ---
 
@@ -346,44 +274,15 @@ plugin-dev               ❌ 关闭  — 插件开发（按需开启）
 
 ---
 
-## 5. Hooks 脚本系统
+## 5. Hooks
 
-目录结构：
-
-```
-~/.claude/scripts/
-├── hooks/
-│   ├── session-context.js        # SessionStart: 注入 git 状态和项目类型
-│   ├── context-refresh.js        # UserPromptSubmit: 长会话周期性提醒
-│   ├── doc-file-warning.js       # PreToolUse(Write): 拒绝创建非标准文档
-│   ├── suggest-compact.js        # PreToolUse(*): 基于上下文使用率提醒 compact
-│   ├── post-edit-console-warn.js # PostToolUse(Edit/Write): 检查 debug 语句
-│   └── check-console-log.js      # Stop: 检查修改文件中的 debug 语句
-└── lib/
-    └── utils.js                  # 跨平台工具函数库
-```
-
-另外 settings.json 中有一个**内联 git push 警告钩子**（PreToolUse Bash），无需脚本文件。
-
-### 钩子一览
+settings.json 中配置了一个**内联 git push 警告钩子**（PreToolUse Bash），无需外部脚本文件。
 
 | 钩子 | 触发点 | 用途 |
 |------|--------|------|
-| session-context.js | SessionStart | 注入当前分支、最近修改文件、项目语言类型（Go/Python/Node.js） |
-| context-refresh.js | UserPromptSubmit | 第 10 次 prompt 后，每 15 次注入关键提醒（中文响应、简洁、先读后改） |
-| doc-file-warning.js | PreToolUse(Write) | 拒绝创建非标准文档文件（仅允许 README/CLAUDE/AGENTS 等白名单或 docs/ 目录） |
-| suggest-compact.js | PreToolUse(*) | 基于真实上下文使用率提醒：≥70% 建议阶段切换时 compact，≥80% 强烈建议立即 compact，同一阈值只提醒一次 |
-| post-edit-console-warn.js | PostToolUse(Edit/Write) | 编辑后扫描文件中的 debug 语句（console.log/print/fmt.Print 等） |
-| check-console-log.js | Stop | 停止时扫描所有 git 修改文件中的 debug 语句，提醒提交前清理 |
 | *(内联)* git push 警告 | PreToolUse(Bash) | 拦截 `git push` 命令，提醒确认分支和远程是否正确 |
 
-### 设计理念
-
-- **手动 compact 优于自动**：自动 compact 在任意位置触发（约 84%），手动 compact 可以在任务逻辑边界处执行
-- **基于真实上下文使用率提醒**：通过 StatusLine → 临时文件 → Hook 的桥接机制，读取真实的 `used_percentage` 而非计数工具调用次数（工具调用次数与上下文占用没有直接关系）
-- **两级阈值提醒**：70% 温和提醒（阶段切换时 compact），80% 强烈提醒（立即 compact），同一阈值只提醒一次避免刷屏
-- **debug 语句双重检查**：编辑时即时警告 + 停止时全量扫描，防止遗漏
-- **文档文件管控**：防止随意创建 .md/.txt 文件造成项目文件膨胀
+> 之前使用过 5 个外部 hook 脚本（session-context、context-refresh、suggest-compact、post-edit-console-warn、check-console-log），经审查后全部移除——Claude Code 自身已覆盖大部分功能，且外部脚本维护成本高、实际效果有限。
 
 ---
 
@@ -408,15 +307,6 @@ plugin-dev               ❌ 关闭  — 插件开发（按需开启）
 1. **`~/.claude/CLAUDE.md`** — 复制第 1 节内容
 2. **`~/.claude/settings.json`** — 复制第 2 节内容
 3. **`~/.claude/statusline-command.sh`** — 复制第 3 节内容
-
-### Hooks 脚本部署
-
-```bash
-# 复制本仓库中的脚本到 Claude 配置目录
-cp -r scripts/ ~/.claude/scripts/
-```
-
-> **注意**：settings.json 中的 `~/.claude/...` 路径在 macOS/Linux 下可直接使用，shell 会自动展开 `~`。如不生效，请替换为绝对路径（如 `/home/yourname/.claude/...`）。
 
 ### Plugins 安装
 
