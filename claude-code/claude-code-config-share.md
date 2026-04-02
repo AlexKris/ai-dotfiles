@@ -89,37 +89,26 @@
 
 ```json
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "enabledPlugins": {
+    "commit-commands@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": false,
+    "claude-code-setup@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
-  "includeCoAuthoredBy": false,
-  "permissions": {
-    "allow": [
-      "Bash(curl:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git branch:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(ls:*)",
-      "Bash(mkdir:*)",
-      "Bash(touch:*)",
-      "mcp__plugin_context7_context7__resolve-library-id",
-      "mcp__plugin_context7_context7__query-docs"
-    ],
-    "deny": [
-      "Bash(rm -rf *)",
-      "Bash(curl * | bash)",
-      "Bash(curl * | sh)",
-      "Bash(wget * | bash)",
-      "Bash(ssh *)",
-      "Bash(scp *)",
-      "Read(~/.ssh/*)",
-      "Read(~/.aws/*)",
-      "Read(**/.env*)",
-      "Read(**/credentials*)"
-    ]
   },
   "hooks": {
     "PreToolUse": [
@@ -134,125 +123,93 @@
       }
     ]
   },
-  "statusLine": {
-    "type": "command",
-    "command": "sh ~/.claude/statusline-command.sh"
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs"
+    ],
+    "deny": [
+      "Bash(rm *)",
+      "Bash(curl * | bash)",
+      "Bash(curl * | sh)",
+      "Bash(wget * | bash)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(git push *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)",
+      "Read(~/.ssh/*)",
+      "Read(~/.aws/*)",
+      "Read(**/.env*)",
+      "Read(**/credentials*)"
+    ]
   },
-  "enabledPlugins": {
-    "commit-commands@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": false,
-    "feature-dev@claude-plugins-official": true,
-    "plugin-dev@claude-plugins-official": false,
-    "claude-code-setup@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
-  }
+  "statusLine": "// 使用 claude-hud 插件，运行 /claude-hud:setup 自动配置"
 }
 ```
 
 **亮点：**
 
-- **安全权限白名单**：allow 只放行安全的 bash 命令和 git 操作
-- **安全拒绝规则**：deny 阻止 `rm -rf`、`curl|bash` 管道执行、SSH/SCP 远程访问、读取 `.ssh`/`.aws`/`.env`/`credentials` 等敏感文件
+- **`$schema`**：启用 IDE 自动补全和配置校验
+- **去除归因署名**：commit 和 PR 均不带 Claude 署名（使用新版 `attribution` 配置替代已弃用的 `includeCoAuthoredBy`）
+- **安全权限白名单**：allow 放行 git、ls、node/npm 等安全命令，curl 需按需确认
+- **安全拒绝规则**：deny 阻止 `rm`、`curl|bash` 管道执行、SSH/SCP 远程访问、破坏性 git 操作（`push`/`reset --hard`/`clean`）、读取 `.ssh`/`.aws`/`.env`/`credentials` 等敏感文件
 - **git push 内联警告**：PreToolUse(Bash) 拦截 git push 并提醒确认分支和远程
 - **Agent Teams 实验特性**：通过环境变量开启多 agent 协作
-- **去除 Co-authored-by**：commit 信息不带 Claude 署名
+- **Key 按字母序排列**：遵循官方文档 Available settings 表格顺序
 
 ---
 
-## 3. StatusLine 脚本
+## 3. StatusLine（claude-hud 插件）
 
-文件位置：`~/.claude/statusline-command.sh`
+使用 [claude-hud](https://github.com/jarrodwatts/claude-hud) 插件替代自定义脚本，提供多行彩色 HUD 显示。
 
-在终端底部实时显示当前工作状态：
+**安装：**
 
 ```bash
-#!/bin/sh
-input=$(cat)
-
-# Parse fields
-cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // ""')
-model=$(echo "$input" | jq -r '.model.display_name // ""')
-used=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
-cost=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
-output_tokens=$(echo "$input" | jq -r '.context_window.total_output_tokens // empty')
-
-# Short path: replace $HOME with ~, then keep last 2 components
-home="$HOME"
-short_cwd=$(echo "$cwd" | sed "s|^$home|~|")
-short_cwd=$(echo "$short_cwd" | awk -F'/' '{
-  n = NF
-  if (n <= 3) print $0
-  else print "…/" $(n-1) "/" $n
-}')
-
-# Git branch (skip optional lock to avoid blocking)
-branch=$(git -C "$cwd" --no-optional-locks symbolic-ref --short HEAD 2>/dev/null)
-
-# Build status parts
-parts=""
-
-# cwd
-parts="${short_cwd}"
-
-# git branch
-if [ -n "$branch" ]; then
-  parts="${parts}  ${branch}"
-fi
-
-# model
-if [ -n "$model" ]; then
-  parts="${parts}  ${model}"
-fi
-
-# context usage
-if [ -n "$used" ]; then
-  used_int=$(printf "%.0f" "$used")
-  parts="${parts}  used:${used_int}%"
-
-  # Write context usage to temp file for hooks to read
-  session_id=$(echo "$input" | jq -r '.session_id // empty')
-  if [ -n "$session_id" ]; then
-    printf "%s" "$used_int" > "${TMPDIR:-/tmp}/claude-context-pct-${session_id}"
-  fi
-fi
-
-# output tokens (format as k)
-if [ -n "$output_tokens" ]; then
-  out_k=$(awk "BEGIN{printf \"%.1f\", $output_tokens/1000}")
-  parts="${parts}  out:${out_k}k"
-fi
-
-# cost
-if [ -n "$cost" ]; then
-  parts="${parts}  \$$(printf "%.2f" "$cost")"
-fi
-
-printf "%s" "$parts"
-```
-
-**显示效果示例：**
-
-```
-~/project/myapp  main  Opus 4.6  used:42%  out:15.3k  $1.25
+# 在 Claude Code 中执行
+/plugin marketplace add jarrodwatts/claude-hud
+/plugin install claude-hud
+/claude-hud:setup
 ```
 
 **显示内容：**
 
-| 字段 | 说明 |
+| 功能 | 说明 |
 |------|------|
-| 短路径 | `~` 替换 home，只保留最后 2 层目录 |
-| Git 分支 | 当前分支名 |
-| 模型名 | 当前使用的模型 |
-| used% | 上下文窗口使用百分比 |
-| out:Xk | 总输出 token 数（千） |
-| $X.XX | 本次会话累计费用 |
+| 上下文进度条 | 彩色进度条（绿→黄→红），直观显示上下文健康度 |
+| 速率限制 | 显示 API 速率限制状态 |
+| 工具活动 | 显示正在运行/已完成的工具 |
+| Agent 状态 | 显示子 agent 状态和 todo 进度 |
+| 会话信息 | 会话时长、配置计数（CLAUDE.md、rules、MCPs） |
+| 会话名称 | 显示会话 slug 或自定义标题 |
 
-**备注**：StatusLine 同时将 `used_percentage` 写入临时文件 `$TMPDIR/claude-context-pct-${session_id}`，可供自定义脚本读取上下文使用率。
+**可选配置**（`~/.claude/plugins/claude-hud/config.json`）：
+
+```json
+{
+  "display": {
+    "showTools": true,
+    "showAgents": true,
+    "showTodos": true,
+    "showDuration": true,
+    "showConfigCounts": true,
+    "showSessionName": true
+  }
+}
+```
 
 ---
 
@@ -269,6 +226,7 @@ security-guidance        ✅ 启用  — 安全指导
 claude-md-management     ✅ 启用  — CLAUDE.md 审计和改进
 skill-creator            ✅ 启用  — 创建、修改和测试自定义 Skills
 superpowers              ✅ 启用  — 增强工作流（brainstorming、plan、TDD、debugging 等）
+claude-hud               ✅ 启用  — 多行彩色 StatusLine HUD（上下文、工具、agent、todo）
 plugin-dev               ❌ 关闭  — 插件开发（按需开启）
 ```
 
@@ -302,11 +260,10 @@ settings.json 中配置了一个**内联 git push 警告钩子**（PreToolUse Ba
 
 ## 7. 快速复制指南
 
-### 最小配置（3 个文件即可生效）
+### 最小配置（2 个文件即可生效）
 
 1. **`~/.claude/CLAUDE.md`** — 复制第 1 节内容
-2. **`~/.claude/settings.json`** — 复制第 2 节内容
-3. **`~/.claude/statusline-command.sh`** — 复制第 3 节内容
+2. **`~/.claude/settings.json`** — 复制第 2 节内容（statusLine 通过 claude-hud 插件自动配置）
 
 ### Plugins 安装
 
@@ -318,4 +275,4 @@ settings.json 中配置了一个**内联 git push 警告钩子**（PreToolUse Ba
 
 ---
 
-*最后更新：2026-03-11*
+*最后更新：2026-04-02*
