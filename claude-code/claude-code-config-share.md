@@ -108,6 +108,7 @@
     "superpowers@claude-plugins-official": true
   },
   "env": {
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "hooks": {
@@ -167,6 +168,7 @@
 - **安全权限白名单**：allow 放行 git、ls、node/npm 等安全命令，curl 需按需确认
 - **安全拒绝规则**：deny 阻止 `rm`、`curl|bash` 管道执行、SSH/SCP 远程访问、破坏性 git 操作（`push`/`reset --hard`/`clean`）、读取 `.ssh`/`.aws`/`.env`/`credentials` 等敏感文件
 - **git push 内联警告**：PreToolUse(Bash) 拦截 git push 并提醒确认分支和远程
+- **关闭非必要流量**：`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` 一键禁用遥测、错误报告、自动更新、反馈命令
 - **Agent Teams 实验特性**：通过环境变量开启多 agent 协作
 - **Key 按字母序排列**：遵循官方文档 Available settings 表格顺序
 
