@@ -4,8 +4,6 @@
     "commit": "",
     "pr": ""
   },
-  "autoUpdatesChannel": "stable",
-  "effortLevel": "high",
   "enabledPlugins": {
     "claude-code-setup@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
