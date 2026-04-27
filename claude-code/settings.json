@@ -57,16 +57,6 @@
       }
     ]
   },
-  "statusLine": "// 使用 claude-hud 插件，运行 /claude-hud:setup 自动配置",
-  "enabledPlugins": {
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": false,
-    "plugin-dev@claude-plugins-official": false,
-    "skill-creator@claude-plugins-official": true
-  },
   "skipAutoPermissionPrompt": true,
   "theme": "dark"
 }
