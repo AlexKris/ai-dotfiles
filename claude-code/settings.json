@@ -32,9 +32,7 @@
       "Bash(curl * | bash)",
       "Bash(curl * | sh)",
       "Bash(git clean *)",
-      "Bash(git push *)",
       "Bash(git reset --hard*)",
-      "Bash(rm *)",
       "Bash(scp *)",
       "Bash(ssh *)",
       "Bash(wget * | bash)",
@@ -51,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); const cmd=d.tool_input?.command||''; if(/^git\\s+push/.test(cmd)){console.error('[Hook] WARNING: About to git push. Verify branch and remote are correct.');}\""
+            "command": "node \"$HOME/.claude/hooks/guard-bash.js\""
           }
         ]
       }
