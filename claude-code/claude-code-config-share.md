@@ -90,26 +90,47 @@
 ```json
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1",
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
   "attribution": {
     "commit": "",
     "pr": ""
   },
-  "enabledPlugins": {
-    "commit-commands@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": false,
-    "feature-dev@claude-plugins-official": true,
-    "plugin-dev@claude-plugins-official": false,
-    "claude-code-setup@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
-  },
-  "env": {
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(git:*)",
+      "Bash(head:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(tail:*)",
+      "Bash(touch:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__plugin_context7_context7__resolve-library-id"
+    ],
+    "deny": [
+      "Bash(curl * | bash)",
+      "Bash(curl * | sh)",
+      "Bash(git clean *)",
+      "Bash(git reset --hard*)",
+      "Bash(scp *)",
+      "Bash(ssh *)",
+      "Bash(wget * | bash)",
+      "Read(**/.env*)",
+      "Read(**/credentials*)",
+      "Read(~/.aws/*)",
+      "Read(~/.ssh/*)"
+    ]
   },
   "hooks": {
     "PreToolUse": [
@@ -118,46 +139,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); const cmd=d.tool_input?.command||''; if(/^git\\s+push/.test(cmd)){console.error('[Hook] WARNING: About to git push. Verify branch and remote are correct.');}\""
+            "command": "node \"$HOME/.claude/hooks/guard-bash.js\""
           }
         ]
       }
     ]
   },
-  "permissions": {
-    "allow": [
-      "Bash(git:*)",
-      "Bash(ls:*)",
-      "Bash(mkdir:*)",
-      "Bash(touch:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(wc:*)",
-      "Bash(which:*)",
-      "Bash(node:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "mcp__plugin_context7_context7__resolve-library-id",
-      "mcp__plugin_context7_context7__query-docs"
-    ],
-    "deny": [
-      "Bash(rm *)",
-      "Bash(curl * | bash)",
-      "Bash(curl * | sh)",
-      "Bash(wget * | bash)",
-      "Bash(ssh *)",
-      "Bash(scp *)",
-      "Bash(git push *)",
-      "Bash(git reset --hard*)",
-      "Bash(git clean *)",
-      "Read(~/.ssh/*)",
-      "Read(~/.aws/*)",
-      "Read(**/.env*)",
-      "Read(**/credentials*)"
-    ]
-  },
-  "statusLine": "// 使用 claude-hud 插件，运行 /claude-hud:setup 自动配置"
+  "skipAutoPermissionPrompt": true,
+  "theme": "dark"
 }
 ```
 
@@ -166,10 +155,9 @@
 - **`$schema`**：启用 IDE 自动补全和配置校验
 - **去除归因署名**：commit 和 PR 均不带 Claude 署名（使用新版 `attribution` 配置替代已弃用的 `includeCoAuthoredBy`）
 - **安全权限白名单**：allow 放行 git、ls、node/npm 等安全命令，curl 需按需确认
-- **安全拒绝规则**：deny 阻止 `rm`、`curl|bash` 管道执行、SSH/SCP 远程访问、破坏性 git 操作（`push`/`reset --hard`/`clean`）、读取 `.ssh`/`.aws`/`.env`/`credentials` 等敏感文件
-- **git push 内联警告**：PreToolUse(Bash) 拦截 git push 并提醒确认分支和远程
-- **关闭非必要流量**：`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` 一键禁用遥测、错误报告、自动更新、反馈命令
-- **Agent Teams 实验特性**：通过环境变量开启多 agent 协作
+- **安全拒绝规则**：deny 阻止 `curl|bash` 管道执行、SSH/SCP 远程访问、破坏性 git 操作（`reset --hard`/`clean`）、读取 `.ssh`/`.aws`/`.env`/`credentials` 等敏感文件
+- **精准安全守卫（guard-bash hook）**：不再对 `git push`/`rm` 一刀切全禁，而是用 PreToolUse(Bash) 脚本 `guard-bash.js` 精准拦截真正危险的动作——force push、推送到 `main`/`master`、删除文件系统根/系统顶层目录/家目录（详见第 5 节）。普通 push、项目内 `rm` 正常放行
+- **环境变量**：`DISABLE_NONESSENTIAL_TRAFFIC` 关闭遥测/错误报告/自动更新等非必要流量；`DISABLE_1M_CONTEXT`、`DISABLE_AUTO_MEMORY` 关闭按需特性；`SUBAGENT_MODEL=sonnet` 子 agent 用更省成本的模型；`EXPERIMENTAL_AGENT_TEAMS` 开启多 agent 协作
 - **Key 按字母序排列**：遵循官方文档 Available settings 表格顺序
 
 ---
@@ -236,13 +224,19 @@ plugin-dev               ❌ 关闭  — 插件开发（按需开启）
 
 ## 5. Hooks
 
-settings.json 中配置了一个**内联 git push 警告钩子**（PreToolUse Bash），无需外部脚本文件。
+settings.json 配置了一个 **PreToolUse(Bash) 安全守卫钩子**，指向单个精简脚本 `hooks/guard-bash.js`，命中危险动作时 `exit 2` **硬阻断**（优先级高于 `allow` 规则）；未命中则静默放行，交回正常权限流程。
 
-| 钩子 | 触发点 | 用途 |
-|------|--------|------|
-| *(内联)* git push 警告 | PreToolUse(Bash) | 拦截 `git push` 命令，提醒确认分支和远程是否正确 |
+文件位置：`~/.claude/hooks/guard-bash.js`（仓库内：`claude-code/hooks/guard-bash.js`）
 
-> 之前使用过 5 个外部 hook 脚本（session-context、context-refresh、suggest-compact、post-edit-console-warn、check-console-log），经审查后全部移除——Claude Code 自身已覆盖大部分功能，且外部脚本维护成本高、实际效果有限。
+| 拦截项 | 触发条件 | 说明 |
+|--------|----------|------|
+| force push | `git push` 含 `--force` / `--force-with-lease` / `-f` | 普通 push 放行 |
+| 推送保护分支 | `git push` 目标为 `main`/`master`（显式写出，或当前分支为 main/master 的裸 `git push`） | 推 feature 分支放行 |
+| 危险删除 | `rm` 指向 文件系统根 `/`、根下系统顶层目录（`/etc`、`/usr`、`/Users` 等）、家目录（`~`/`$HOME`） | 项目内删除照常走确认 |
+
+设计要点：脚本通用、无硬编码个人路径（家目录用 `os.homedir()` 动态获取）；用 `exit 2` 而非权限模式，因为 Bash 权限模式是前缀匹配、对「只拦 force / 只拦 main」这类参数级约束会失效（官方文档亦推荐参数级约束用 hook）。
+
+> 早期曾用过 5 个外部 hook 脚本（session-context、context-refresh、suggest-compact、post-edit-console-warn、check-console-log），因维护成本高、收益有限而全部移除。如今只保留 `guard-bash.js` 这一个聚焦安全的守卫脚本——它做的是权限模式无法可靠表达的精准拦截，值得这点维护成本。
 
 ---
 
@@ -262,10 +256,16 @@ settings.json 中配置了一个**内联 git push 警告钩子**（PreToolUse Ba
 
 ## 7. 快速复制指南
 
-### 最小配置（2 个文件即可生效）
+### 最小配置（3 个文件即可生效）
 
 1. **`~/.claude/CLAUDE.md`** — 复制第 1 节内容
 2. **`~/.claude/settings.json`** — 复制第 2 节内容（statusLine 通过 claude-hud 插件自动配置）
+3. **`~/.claude/hooks/guard-bash.js`** — 安全守卫脚本（settings.json 的 hook 依赖它）：
+
+```bash
+mkdir -p ~/.claude/hooks
+cp claude-code/hooks/guard-bash.js ~/.claude/hooks/
+```
 
 ### Plugins 安装
 
@@ -277,4 +277,4 @@ settings.json 中配置了一个**内联 git push 警告钩子**（PreToolUse Ba
 
 ---
 
-*最后更新：2026-04-02*
+*最后更新：2026-06-08*

@@ -8,20 +8,18 @@ AI coding 工具的配置分享，涵盖日常使用中沉淀的规则、脚本�
 
 Claude Code 全套配置，包括：
 
-- **CLAUDE.md** — 用户级全局规则（中文交互、强制 Plan Mode、最小变更、自我纠错）
-- **settings.json** — 权限白名单/黑名单、5 类 Hooks、StatusLine、Plugins 配置
-- **statusline-command.sh** — 终端底部状态栏（路径、分支、模型、上下文占用、token、费用）
-- **scripts/hooks/** — 6 个生命周期钩子脚本（session 注入、compact 提醒、debug 语句检查等）
-- **scripts/lib/utils.js** — 跨平台工具函数库
+- **settings.json** — 权限白名单/黑名单、安全守卫 Hook、环境变量、attribution、theme
+- **hooks/guard-bash.js** — PreToolUse(Bash) 安全守卫脚本，精准拦截 force push、推送 main/master、删除根/系统顶层/家目录
+- **claude-code-config-share.md** — 全套配置说明（含用户级 CLAUDE.md、StatusLine、Plugins 推荐清单）
 
 详见 [claude-code/claude-code-config-share.md](claude-code/claude-code-config-share.md)
 
 ## 快速使用
 
 ```bash
-# 复制配置到 Claude Code 目录
-cp claude-code/scripts/ ~/.claude/scripts/ -r
-cp claude-code/statusline-command.sh ~/.claude/
+# 安全守卫脚本（settings.json 的 hook 依赖它）
+mkdir -p ~/.claude/hooks
+cp claude-code/hooks/guard-bash.js ~/.claude/hooks/
 # settings.json 和 CLAUDE.md 请参考文档手动配置
 ```
 
