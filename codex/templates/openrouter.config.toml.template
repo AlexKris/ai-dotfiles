@@ -1,0 +1,12 @@
+# Copy to ~/.codex/openrouter.config.toml.
+# Keep OPENROUTER_API_KEY in your local environment or secret manager.
+
+model_provider = "openrouter"
+model = "openai/gpt-5.5-pro"
+model_reasoning_effort = "high"
+
+[model_providers.openrouter]
+name = "OpenRouter"
+base_url = "https://openrouter.ai/api/v1"
+wire_api = "responses"
+env_key = "OPENROUTER_API_KEY"

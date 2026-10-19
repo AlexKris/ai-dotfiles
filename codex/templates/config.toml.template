@@ -1,0 +1,70 @@
+# Codex config template（可分享脱敏版）
+# 同步本机可迁移配置；模型、推理强度和桌面偏好是同步值，并非 Codex 默认值。
+# 已移除本机路径、通知脚本、项目信任列表、插件安装信息和信任记录。
+# Context7 密钥使用占位符，使用前只在本机替换，禁止提交真实密钥。
+
+# 1) 输出风格（核心）
+personality = "pragmatic"
+
+# 2) 提交信息治理（核心）
+# 关闭自动 attribution，避免提交信息出现 AI/Codex 尾注
+commit_attribution = ""
+
+# 3) 模型与推理偏好
+model = "gpt-6-astra"
+model_reasoning_effort = "max"
+plan_mode_reasoning_effort = "max"
+service_tier = "default"
+
+# 4) 安全与效率平衡（核心）
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode = "workspace-write"
+
+# 5) 实验性上下文管理
+# 需要 ChatGPT Plus、Pro 或 Pro Lite 登录；修改后新建任务生效。
+[features.context_management]
+experimental_mode = true
+
+# 6) 通用 MCP
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+[mcp_servers.context7.env]
+CONTEXT7_API_KEY = "<CONTEXT7_API_KEY>"
+
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"
+
+# 7) 桌面偏好（仅桌面端使用）
+[desktop]
+appearanceTheme = "system"
+localeOverride = "en-US"
+default-service-tier = "priority"
+followUpQueueMode = "queue"
+dock-icon-preference = "app-default"
+keepRemoteControlAwakeWhilePluggedIn = true
+conversationDetailMode = "STEPS_PROSE"
+enabled-reasoning-efforts = ["low", "medium", "high", "xhigh", "ultra", "max"]
+
+[desktop.open-in-target-preferences]
+global = "vscode"
+
+# ----------------------------
+# 本机按需补充（不包含真实路径）
+# ----------------------------
+
+# A. 工作区沙箱细粒度控制（可选）
+# [sandbox_workspace_write]
+# writable_roots = []
+# network_access = false
+# exclude_tmpdir_env_var = false
+# exclude_slash_tmp = false
+
+# B. 项目信任白名单（可选）
+# [projects."<ABS_PATH_TO_REPO_1>"]
+# trust_level = "trusted"
+
+# [projects."<ABS_PATH_TO_REPO_2>"]
+# trust_level = "trusted"
