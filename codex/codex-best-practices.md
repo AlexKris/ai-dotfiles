@@ -18,32 +18,32 @@
 
 ### 2.1 运行配置
 
-| 配置项 | 模板值 | 功能 | 说明 |
-|---|---|---|---|
-| `commit_attribution` | `""` | 桌面端提交署名回退值 | 署名开关以账户设置为准；桌面端读不到账户设置时才用此值，`""` 表示不加署名。CLI 不读取此项，启动时会提示忽略，属正常。 |
-| `approval_policy` | `on-request` | 审批触发策略 | 交互式开发的平衡默认，避免 `never` 带来的误操作风险。 |
-| `approvals_reviewer` | `auto_review` | 审批处理方式 | 由审查子代理收集上下文、评估风险后批准或拒绝；旧名 `guardian_subagent`（桌面端仍会写入）与之等价。 |
-| `sandbox_mode` | `workspace-write` | 执行沙箱级别 | 允许工作区写入，默认仍受沙箱边界约束。 |
-| `model` | `gpt-6-astra` | 默认模型 | 保留本机选择，使用前按账户可用模型调整。 |
-| `model_reasoning_effort` / `plan_mode_reasoning_effort` | `xhigh` / `ultra` | 普通任务 / Plan 模式推理强度 | 保留本机偏好，按任务调整。 |
-| `service_tier` | `priority` | 默认服务层级 | 保留本机 CLI 配置。 |
-| `features.daemon_auto_start` | `false` | CLI 常驻服务自动启动 | 显式关闭；官方后续可能改为默认开启，这里保留 opt-out。 |
-| `features.context_management.experimental_mode` | `true` | 实验性上下文管理 | 通过笔记和可搜索历史保留长任务细节；需要 ChatGPT Plus、Pro 或 Pro Lite 登录，新建任务生效。 |
+| 配置项 | 模板值 | 生效端 | 功能 | 说明 |
+|---|---|---|---|---|
+| `commit_attribution` | `""` | 仅桌面端 | 桌面端提交署名回退值 | 只作用于桌面端自己的提交按钮。署名开关以账户设置为准；桌面端读不到账户设置时才用此值，`""` 表示不加署名。CLI 不读取此项。 |
+| `approval_policy` | `on-request` | 两端 | 审批触发策略 | 交互式开发的平衡默认，避免 `never` 带来的误操作风险。 |
+| `approvals_reviewer` | `auto_review` | 两端 | 审批处理方式 | 由审查子代理收集上下文、评估风险后批准或拒绝；旧名 `guardian_subagent`（桌面端仍会写入）与之等价。 |
+| `sandbox_mode` | `workspace-write` | 两端 | 执行沙箱级别 | 允许工作区写入，默认仍受沙箱边界约束。 |
+| `model` | `gpt-6-astra` | 两端 | 默认模型 | 保留本机选择，使用前按账户可用模型调整；桌面端可按对话切换。 |
+| `model_reasoning_effort` / `plan_mode_reasoning_effort` | `xhigh` / `ultra` | 两端 | 普通任务 / Plan 模式推理强度 | 保留本机偏好，按任务调整。 |
+| `service_tier` | `priority` | CLI | 默认服务层级（Fast） | 桌面端用 `desktop.default-service-tier`。经自建 provider 时，响应里的 `service_tier` 始终是 `default`，不能据此判断，以输出速度为准。 |
+| `model_provider` | 注释 | 两端 | 默认 provider | 使用自建 provider 时取消注释，并启用模板末尾的 provider 示例。 |
+| `features.daemon_auto_start` | `false` | CLI | CLI 常驻服务自动启动 | 0.163.0 默认开启，这里显式关闭。 |
 
 模型与推理强度属于可分享偏好，本次按同步要求保留；其他使用者应按自己的账户和任务调整。
 
 ### 2.2 工具与桌面设置
 
-| 配置项 | 模板状态 | 用途 | 说明 |
-|---|---|---|---|
-| `mcp_servers.context7` | 已配置，官方远程服务 | 实时文档检索 | key 存 macOS 钥匙串（service=`context7`），由 `http_headers_helper` 取出作为请求头，配置中不写明文。 |
-| `mcp_servers.openaiDeveloperDocs` | 已配置 | OpenAI 官方文档检索 | 保留公开 MCP 地址。 |
-| `desktop` | 已同步 | 桌面界面与任务偏好 | 包含主题、语言、队列和编辑器偏好；桌面服务层级保留为 `priority`。 |
-| `[sandbox_workspace_write]` 细粒度字段 | 注释 | 按需控制 tmp/network 行为 | 仅保留通用示例。 |
-| `[projects."<ABS_PATH>"].trust_level` | 注释 | 按需信任本机项目 | 仅保留占位示例，不复制真实路径。 |
-| `[model_providers.<id>.auth]` | 注释 | 自建或第三方 provider 的 token 从 macOS 钥匙串读取 | 代替明文 `experimental_bearer_token`（官方不推荐）；桌面端读不到 shell 环境变量时也能用。 |
+| 配置项 | 模板状态 | 生效端 | 用途 | 说明 |
+|---|---|---|---|---|
+| `mcp_servers.context7` | 已配置，官方远程服务 | 两端 | 实时文档检索 | key 存 macOS 钥匙串（service=`context7`），由 `http_headers_helper` 取出作为请求头，配置中不写明文。 |
+| `mcp_servers.openaiDeveloperDocs` | 已配置 | 两端 | OpenAI 官方文档检索 | 保留公开 MCP 地址。 |
+| `desktop` | 已同步 | 仅桌面端 | 桌面界面与任务偏好 | 包含主题、语言、队列和编辑器偏好；桌面服务层级保留为 `priority`。 |
+| `[sandbox_workspace_write]` 细粒度字段 | 注释示例 | 两端 | 按需控制 tmp/network 行为 | 仅保留通用示例。 |
+| `[projects."<ABS_PATH>"].trust_level` | 注释示例 | 两端 | 按需信任本机项目 | 仅保留占位示例，不复制真实路径。 |
+| `[model_providers.<id>]` 及 `.auth` | 注释示例 | 两端 | 自建或第三方 provider，token 从 macOS 钥匙串读取 | 代替明文 `experimental_bearer_token`（官方不推荐）；桌面端读不到 shell 环境变量时也能用。存入或轮换 token：`security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w`。 |
 
-未同步项：自建 provider 地址与 token、本机通知脚本、真实项目路径、依赖本机安装路径的 MCP、插件与市场安装记录、模型提示状态、环境信任哈希及 hook 信任记录。已被当前 CLI 标记为移除的 `features.js_repl` 也不复制；本机该项保持原样。
+未同步项：自建 provider 地址与 token、本机通知脚本、真实项目路径、依赖本机安装路径的 MCP、插件与市场安装记录、模型提示状态、环境信任哈希及 hook 信任记录。其中 `tui.*` 只对 CLI 生效，其余（`notify`、`mcp_servers.node_repl`、`plugins`、`marketplaces`、`hooks.state`、`shell_environment_policy.set`）由桌面端自动写入、两端共用。已被当前 CLI 标记为移除的 `features.js_repl` 也不复制；本机该项保持原样。
 
 ## 3. AGENTS.md 最佳实践（用户级规则）
 
@@ -106,7 +106,7 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 - [ ] 按账户和任务检查模板中的模型、推理强度与服务层级
 - [ ] 启用 context7 时，把 key 存入钥匙串：`security add-generic-password -U -s context7 -a "$USER" -w`
 - [ ] 按本机环境替换占位符 `<ABS_PATH_TO_REPO_1>`（仅在启用 `projects.trust_level` 时需要）
-- [ ] 如使用自建 provider，按模板示例 C 填写；`base_url` 等私有地址不进仓库，从旧机器的 `~/.codex/config.toml` 复制，token 存入钥匙串，不在配置里写明文
+- [ ] 如使用自建 provider，取消模板中 `model_provider` 和末尾 provider 示例的注释并填写；`base_url` 等私有地址不进仓库，从旧机器的 `~/.codex/config.toml` 复制，token 存入钥匙串，不在配置里写明文
 - [ ] 不复制本机的 `notify`、`mcp_servers.node_repl`、`plugins`、`marketplaces`、`hooks.state` 和 `tui` 提示状态：ChatGPT 桌面端会自动写入；项目信任在首次打开项目时由 Codex 询问
 
 #### C. 功能验证
@@ -114,7 +114,6 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 - [ ] 打开 Codex 新会话，确认无解析错误
 - [ ] TUI 里执行 `/mcp`，确认 context7 已连接
 - [ ] 执行 `codex exec "say hi"`，确认 provider 与钥匙串 token 可用
-- [ ] 确认 `features.context_management.experimental_mode = true`，并新建任务使用实验性上下文管理
 - [ ] 验证 `AGENTS.md` 规则是否生效（如非 trivial 任务先给计划）
 - [ ] 在工作区内做一次普通写操作，确认 `workspace-write` 行为符合预期
 - [ ] 执行一次需审批的操作，确认 `on-request` 触发正确
@@ -138,7 +137,6 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 - Config basics: https://learn.chatgpt.com/docs/config-file/config-basic
 - Config reference: https://learn.chatgpt.com/docs/config-file/config-reference
 - Config schema: https://learn.chatgpt.com/docs/config-schema.json
-- Experimental context management: https://learn.chatgpt.com/docs/models#experimental-context-management
 - AGENTS.md guide: https://learn.chatgpt.com/docs/agent-configuration/agents-md
 - Sample config: https://learn.chatgpt.com/docs/config-file/config-sample
 

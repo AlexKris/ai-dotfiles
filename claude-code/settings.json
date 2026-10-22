@@ -31,8 +31,8 @@
       "Bash(touch:*)",
       "Bash(wc:*)",
       "Bash(which:*)",
-      "mcp__plugin_context7_context7__query-docs",
-      "mcp__plugin_context7_context7__resolve-library-id"
+      "mcp__claude_ai_Context7__query-docs",
+      "mcp__claude_ai_Context7__resolve-library-id"
     ],
     "deny": [
       "Bash(git clean *)",
@@ -43,10 +43,13 @@
     ]
   },
   "model": "opus",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
   "enabledPlugins": {
     "codex@openai-codex": true,
     "commit-commands@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true
@@ -60,9 +63,6 @@
     }
   },
   "modelSettings": {
-    "claude-fable-5-1": {
-      "effortLevel": "high"
-    },
     "claude-opus-5-5": {
       "effortLevel": "xhigh"
     }
@@ -70,10 +70,6 @@
   "autoCompactWindow": 400000,
   "tui": "fullscreen",
   "theme": "dark",
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.sh"
-  },
   "autoMode": {
     "soft_deny": [
       "$defaults",

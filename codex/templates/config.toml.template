@@ -1,36 +1,18 @@
-# Codex config template（可分享脱敏版）
-# 同步本机可迁移配置；模型、推理强度和桌面偏好是同步值，并非 Codex 默认值。
-# 已移除本机路径、通知脚本、项目信任列表、插件安装信息和信任记录。
-# Context7 key 从 macOS 钥匙串读取，配置中不出现真实密钥。
-
-# 1) 提交信息治理（核心）
-# 仅桌面端读取：署名开关以账户设置为准，读不到账户设置时才用此值，"" 表示不加署名；CLI 不读取此项，启动时提示忽略属正常
 commit_attribution = ""
 
-# 2) 模型与推理偏好
 model = "gpt-6-astra"
 model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "ultra"
 service_tier = "priority"
+# model_provider = "<PROVIDER_ID>"
 
-# 3) 安全与效率平衡（核心）
-# auto_review：由审查子代理评估风险后批准或拒绝；桌面端会写成等价的旧名 guardian_subagent
 approval_policy = "on-request"
 approvals_reviewer = "auto_review"
 sandbox_mode = "workspace-write"
 
-# 4) 功能开关
-# 显式关闭 CLI 常驻服务自动启动
 [features]
 daemon_auto_start = false
 
-# 5) 实验性上下文管理
-# 需要 ChatGPT Plus、Pro 或 Pro Lite 登录；修改后新建任务生效。
-[features.context_management]
-experimental_mode = true
-
-# 6) 通用 MCP
-# Context7 用官方远程服务；key 存入钥匙串：security add-generic-password -U -s context7 -a "$USER" -w
 [mcp_servers.context7]
 url = "https://mcp.context7.com/mcp"
 http_headers_helper = "printf '{\"Authorization\":\"Bearer %s\"}' \"$(/usr/bin/security find-generic-password -s context7 -w)\""
@@ -38,7 +20,6 @@ http_headers_helper = "printf '{\"Authorization\":\"Bearer %s\"}' \"$(/usr/bin/s
 [mcp_servers.openaiDeveloperDocs]
 url = "https://developers.openai.com/mcp"
 
-# 7) 桌面偏好（仅桌面端使用）
 [desktop]
 appearanceTheme = "system"
 localeOverride = "en-US"
@@ -53,28 +34,15 @@ confirm-before-close = "never"
 [desktop.open-in-target-preferences]
 global = "vscode"
 
-# ----------------------------
-# 本机按需补充（不包含真实路径）
-# ----------------------------
-
-# A. 工作区沙箱细粒度控制（可选）
 # [sandbox_workspace_write]
 # writable_roots = []
 # network_access = false
 # exclude_tmpdir_env_var = false
 # exclude_slash_tmp = false
 
-# B. 项目信任白名单（可选）
 # [projects."<ABS_PATH_TO_REPO_1>"]
 # trust_level = "trusted"
 
-# [projects."<ABS_PATH_TO_REPO_2>"]
-# trust_level = "trusted"
-
-# C. 自建或第三方 provider（可选）：token 存 macOS 钥匙串，不写明文 experimental_bearer_token
-# 存入或轮换：security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w
-# model_provider = "<PROVIDER_ID>"
-#
 # [model_providers.<PROVIDER_ID>]
 # name = "<PROVIDER_NAME>"
 # base_url = "<BASE_URL>"

@@ -57,11 +57,11 @@ cp codex/templates/AGENTS.en.md ~/.codex/AGENTS.md
 security add-generic-password -U -s context7 -a "$USER" -w
 ```
 
-自建 provider：取消模板示例 C 的注释并填写。`base_url` 是私有地址，不进仓库，从旧机器的 `~/.codex/config.toml` 复制；token 存入钥匙串：`security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w`。
+自建 provider：取消模板中 `model_provider` 和末尾 `[model_providers.<PROVIDER_ID>]` 示例的注释并填写。`base_url` 是私有地址，不进仓库，从旧机器的 `~/.codex/config.toml` 复制；token 存入钥匙串：`security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w`。
 
 ### 验证
 
-- Claude Code：启动后底部显示状态栏，`claude plugin list` 列出全部插件
+- Claude Code：启动后底部显示状态栏，`claude plugin list` 列出全部插件；Context7 来自 claude.ai 连接器，登录账号后 `claude mcp list` 可见
 - Codex：TUI 里 `/mcp` 看到 context7 已连接；`codex exec "say hi"` 正常回复
 
 ## License
