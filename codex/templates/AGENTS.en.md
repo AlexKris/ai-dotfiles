@@ -1,7 +1,6 @@
 # Global AGENTS.md (English)
 
 ## Interaction
-- Respond in Simplified Chinese by default unless the user explicitly requests another language.
 - Be direct and factual. Call out flawed design or assumptions and provide concrete improvements.
 - Keep responses concise and actionable.
 - If intent is clear, execute. If ambiguity is high-impact, clarify first.

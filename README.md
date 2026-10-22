@@ -20,7 +20,7 @@ Claude Code 全套配置，包括：
 Codex 配置模板，包括：
 
 - **templates/config.toml.template** — 可分享的基础配置模板
-- **templates/AGENTS.en.md / AGENTS.zh-CN.md** — 用户级 AGENTS.md（二选一）
+- **templates/AGENTS.en.md** — 用户级 AGENTS.md
 - **codex-best-practices.md** — Codex 配置最佳实践
 
 ## 新机器恢复
@@ -48,7 +48,7 @@ jq -r '.enabledPlugins | keys[]' ~/.claude/settings.json | xargs -n1 claude plug
 ```bash
 mkdir -p ~/.codex
 [ -f ~/.codex/AGENTS.md ] && cp ~/.codex/AGENTS.md ~/.codex/AGENTS.md.bak
-cp codex/templates/AGENTS.en.md ~/.codex/AGENTS.md   # 中文版用 AGENTS.zh-CN.md
+cp codex/templates/AGENTS.en.md ~/.codex/AGENTS.md
 
 # 没有旧配置时直接复制；已有配置则手动合并模板里的设置，保留 projects 和桌面端写入的段
 [ -f ~/.codex/config.toml ] || cp codex/templates/config.toml.template ~/.codex/config.toml

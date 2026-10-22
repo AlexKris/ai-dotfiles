@@ -2,7 +2,6 @@
 
 ## Interaction
 
-- Respond in Chinese
 - Be direct. Call out bad design immediately
 - Concise output, no filler
 - When intent is clear, execute. When ambiguous, ask first

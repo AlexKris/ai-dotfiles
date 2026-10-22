@@ -47,9 +47,9 @@
 
 ## 3. AGENTS.md 最佳实践（用户级规则）
 
-建议保持 `~/.codex/AGENTS.md` 为一份简洁的用户级规则文件。团队分享时优先英文模板，个人使用可直接采用中文模板。建议至少包含以下规则：
+建议保持 `~/.codex/AGENTS.md` 为一份简洁的用户级规则文件。建议至少包含以下规则：
 
-- 响应语言偏好（如默认中文）与输出风格（direct + concise）。
+- 输出风格（direct + concise）。
 - 只在全局文件中放通用规则；仓库特有要求放到项目自己的 `AGENTS.md`。
 - 非 trivial 任务先规划再动手。
 - 修改前必须先读相关文件，禁止凭假设改代码。
@@ -90,7 +90,7 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 只需要这 2 个文件即可落地：
 
 1. `templates/config.toml.template`
-2. `templates/AGENTS.en.md`（英文）或 `templates/AGENTS.zh-CN.md`（中文，二选一）
+2. `templates/AGENTS.en.md`
 
 ### 6.2 迁移步骤
 
@@ -102,7 +102,7 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 #### B. 套用模板
 
 - [ ] 将 `templates/config.toml.template` 中的设置合并到本机 `~/.codex/config.toml`，保留已有的本机专用配置
-- [ ] 在 `templates/AGENTS.en.md` 与 `templates/AGENTS.zh-CN.md` 中二选一，复制为本机 `~/.codex/AGENTS.md`
+- [ ] 将 `templates/AGENTS.en.md` 复制为本机 `~/.codex/AGENTS.md`
 - [ ] 按账户和任务检查模板中的模型、推理强度与服务层级
 - [ ] 启用 context7 时，把 key 存入钥匙串：`security add-generic-password -U -s context7 -a "$USER" -w`
 - [ ] 按本机环境替换占位符 `<ABS_PATH_TO_REPO_1>`（仅在启用 `projects.trust_level` 时需要）
@@ -115,7 +115,7 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 - [ ] TUI 里执行 `/mcp`，确认 context7 已连接
 - [ ] 执行 `codex exec "say hi"`，确认 provider 与钥匙串 token 可用
 - [ ] 确认 `features.context_management.experimental_mode = true`，并新建任务使用实验性上下文管理
-- [ ] 验证 `AGENTS.md` 规则是否生效（如默认中文回答）
+- [ ] 验证 `AGENTS.md` 规则是否生效（如非 trivial 任务先给计划）
 - [ ] 在工作区内做一次普通写操作，确认 `workspace-write` 行为符合预期
 - [ ] 执行一次需审批的操作，确认 `on-request` 触发正确
 - [ ] 让助手生成 commit message，确认无 attribution 尾注（署名由账户设置控制）
