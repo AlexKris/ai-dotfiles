@@ -1,6 +1,6 @@
 # Codex 配置最佳实践（分享版）
 
-最后校验日期：2026-09-08（Asia/Shanghai，Codex CLI 0.153.4）
+最后校验日期：2026-10-22（Asia/Shanghai，Codex CLI 0.163.0）
 
 ## 1. 目标与边界
 
@@ -10,7 +10,7 @@
 - 保持安全：不在模板中暴露密钥、本机路径、个人信息。
 - 保持可维护：采用官方支持字段，避免“平台不支持的伪配置”。
 
-本方案不覆盖 Claude Code 专属能力（hooks/statusline/plugin lifecycle）。
+本方案不包含 hooks、状态栏、插件的定制配置。
 
 ## 2. 本机同步配置（脱敏版）
 
@@ -20,14 +20,14 @@
 
 | 配置项 | 模板值 | 功能 | 说明 |
 |---|---|---|---|
-| `personality` | `pragmatic` | 默认输出风格 | 工程导向、少废话，适配代码协作。 |
-| `commit_attribution` | `""` | 提交归属尾注 | 关闭自动 attribution，避免 commit message 出现 Codex/AI 尾注。 |
+| `commit_attribution` | `""` | 桌面端提交署名回退值 | 署名开关以账户设置为准；桌面端读不到账户设置时才用此值，`""` 表示不加署名。CLI 不读取此项，启动时会提示忽略，属正常。 |
 | `approval_policy` | `on-request` | 审批触发策略 | 交互式开发的平衡默认，避免 `never` 带来的误操作风险。 |
-| `approvals_reviewer` | `auto_review` | 审批处理方式 | 与本机一致，由自动审查处理审批请求。 |
+| `approvals_reviewer` | `auto_review` | 审批处理方式 | 由审查子代理收集上下文、评估风险后批准或拒绝；旧名 `guardian_subagent`（桌面端仍会写入）与之等价。 |
 | `sandbox_mode` | `workspace-write` | 执行沙箱级别 | 允许工作区写入，默认仍受沙箱边界约束。 |
 | `model` | `gpt-6-astra` | 默认模型 | 保留本机选择，使用前按账户可用模型调整。 |
-| `model_reasoning_effort` / `plan_mode_reasoning_effort` | `max` | 普通任务 / Plan 模式推理强度 | 保留本机偏好，按任务调整。 |
-| `service_tier` | `default` | 默认服务层级 | 保留本机 CLI 配置。 |
+| `model_reasoning_effort` / `plan_mode_reasoning_effort` | `xhigh` / `ultra` | 普通任务 / Plan 模式推理强度 | 保留本机偏好，按任务调整。 |
+| `service_tier` | `priority` | 默认服务层级 | 保留本机 CLI 配置。 |
+| `features.daemon_auto_start` | `false` | CLI 常驻服务自动启动 | 显式关闭；官方后续可能改为默认开启，这里保留 opt-out。 |
 | `features.context_management.experimental_mode` | `true` | 实验性上下文管理 | 通过笔记和可搜索历史保留长任务细节；需要 ChatGPT Plus、Pro 或 Pro Lite 登录，新建任务生效。 |
 
 模型与推理强度属于可分享偏好，本次按同步要求保留；其他使用者应按自己的账户和任务调整。
@@ -36,13 +36,14 @@
 
 | 配置项 | 模板状态 | 用途 | 说明 |
 |---|---|---|---|
-| `mcp_servers.context7` | 已配置，密钥为占位符 | 实时文档检索 | 使用前仅在本机替换 `<CONTEXT7_API_KEY>`。 |
+| `mcp_servers.context7` | 已配置，官方远程服务 | 实时文档检索 | key 存 macOS 钥匙串（service=`context7`），由 `http_headers_helper` 取出作为请求头，配置中不写明文。 |
 | `mcp_servers.openaiDeveloperDocs` | 已配置 | OpenAI 官方文档检索 | 保留公开 MCP 地址。 |
 | `desktop` | 已同步 | 桌面界面与任务偏好 | 包含主题、语言、队列和编辑器偏好；桌面服务层级保留为 `priority`。 |
 | `[sandbox_workspace_write]` 细粒度字段 | 注释 | 按需控制 tmp/network 行为 | 仅保留通用示例。 |
 | `[projects."<ABS_PATH>"].trust_level` | 注释 | 按需信任本机项目 | 仅保留占位示例，不复制真实路径。 |
+| `[model_providers.<id>.auth]` | 注释 | 自建或第三方 provider 的 token 从 macOS 钥匙串读取 | 代替明文 `experimental_bearer_token`（官方不推荐）；桌面端读不到 shell 环境变量时也能用。 |
 
-未同步项：本机通知脚本、真实项目路径、依赖本机安装路径的 MCP、插件与市场安装记录、模型提示状态、环境信任哈希及 hook 信任记录。已被当前 CLI 标记为移除的 `features.js_repl` 也不复制；本机该项保持原样。
+未同步项：自建 provider 地址与 token、本机通知脚本、真实项目路径、依赖本机安装路径的 MCP、插件与市场安装记录、模型提示状态、环境信任哈希及 hook 信任记录。已被当前 CLI 标记为移除的 `features.js_repl` 也不复制；本机该项保持原样。
 
 ## 3. AGENTS.md 最佳实践（用户级规则）
 
@@ -55,21 +56,17 @@
 - 任务完成前必须有可验证证据（测试/输出/日志）。
 - 提交信息使用 Conventional Commits，且不含 AI/Codex attribution。
 
-说明：AGENTS 用于“行为约束”，`config.toml` 用于“运行时开关”，两者应同时存在。
+说明：AGENTS 用于“行为约束”，`config.toml` 用于“运行时开关”，两者应同时存在。`personality` 已废弃（`friendly` / `pragmatic` 不再选择风格），输出风格只靠 AGENTS.md 控制。
 
-## 4. 不应照搬的 Claude Code 配置
+## 4. 从 Claude Code 迁移时的差异
 
-以下能力在 Codex 中不能 1:1 迁移：
+Codex 已有对应能力，但配置格式不同，不能直接复制 Claude Code 的 JSON：
 
-- Claude hooks 生命周期：`PreToolUse` / `PostToolUse` / `Stop` / `SessionStart`
-- Claude statusline 自定义命令
-- Claude plugin 开关配置格式
+- Hooks：`[hooks]` 支持 `PreToolUse` / `PostToolUse` / `Stop` / `SessionStart` / `UserPromptSubmit` 等 12 个事件，结构同样是 `matcher` + `hooks` 列表，需改写成 TOML。
+- 状态栏：`tui.status_line` 只能从内置条目中选择和排序，不能像 Claude Code 那样运行自定义命令。
+- 插件：Codex 有自己的插件与 marketplace（`[plugins."<plugin>@<marketplace>"]`），Claude Code 插件不能直接安装。
 
-等效做法：
-
-- 用 `AGENTS.md` 固化流程约束。
-- 用提交前检查脚本/命令作为手动 gate（如 debug 语句扫描）。
-- 用 MCP 服务器替代插件能力扩展。
+流程约束仍建议写在 `AGENTS.md`，外部能力优先用 MCP 服务器接入。
 
 ## 5. 分享与脱敏规范
 
@@ -77,7 +74,7 @@
 
 - 模板中不得包含真实 API Key、Token、密码。
 - 模板中不得包含真实本机绝对路径（用户名路径）。
-- 示例变量统一使用占位符（如 `<CONTEXT7_API_KEY>`、`<ABS_PATH_TO_REPO_1>`）。
+- 示例变量统一使用占位符（如 `<ABS_PATH_TO_REPO_1>`、`<PROVIDER_ID>`）；密钥一律存钥匙串，不进配置。
 - 如历史曾暴露密钥，先轮换后再发布模板。
 
 推荐扫描命令：
@@ -95,35 +92,33 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 1. `templates/config.toml.template`
 2. `templates/AGENTS.en.md`（英文）或 `templates/AGENTS.zh-CN.md`（中文，二选一）
 
-配置 `context7` 密钥时可参考：
-
-3. `templates/.env.example`
-
 ### 6.2 迁移步骤
 
 #### A. 迁移前
 
 - [ ] 备份现有文件：`~/.codex/config.toml`、`~/.codex/AGENTS.md`
 - [ ] 轮换历史可能已暴露的 API Key（尤其是 MCP 相关 key）
-- [ ] 确认目标机器已安装所需运行时（如 `node`、`npx`）
 
 #### B. 套用模板
 
 - [ ] 将 `templates/config.toml.template` 中的设置合并到本机 `~/.codex/config.toml`，保留已有的本机专用配置
 - [ ] 在 `templates/AGENTS.en.md` 与 `templates/AGENTS.zh-CN.md` 中二选一，复制为本机 `~/.codex/AGENTS.md`
 - [ ] 按账户和任务检查模板中的模型、推理强度与服务层级
-- [ ] 按本机环境替换占位符：
-  - [ ] `<CONTEXT7_API_KEY>`（仅在启用 context7 时需要）
-  - [ ] `<ABS_PATH_TO_REPO_1>`（仅在启用 `projects.trust_level` 时需要）
+- [ ] 启用 context7 时，把 key 存入钥匙串：`security add-generic-password -U -s context7 -a "$USER" -w`
+- [ ] 按本机环境替换占位符 `<ABS_PATH_TO_REPO_1>`（仅在启用 `projects.trust_level` 时需要）
+- [ ] 如使用自建 provider，按模板示例 C 填写；`base_url` 等私有地址不进仓库，从旧机器的 `~/.codex/config.toml` 复制，token 存入钥匙串，不在配置里写明文
+- [ ] 不复制本机的 `notify`、`mcp_servers.node_repl`、`plugins`、`marketplaces`、`hooks.state` 和 `tui` 提示状态：ChatGPT 桌面端会自动写入；项目信任在首次打开项目时由 Codex 询问
 
 #### C. 功能验证
 
 - [ ] 打开 Codex 新会话，确认无解析错误
+- [ ] TUI 里执行 `/mcp`，确认 context7 已连接
+- [ ] 执行 `codex exec "say hi"`，确认 provider 与钥匙串 token 可用
 - [ ] 确认 `features.context_management.experimental_mode = true`，并新建任务使用实验性上下文管理
-- [ ] 验证风格是否生效（`personality`）
+- [ ] 验证 `AGENTS.md` 规则是否生效（如默认中文回答）
 - [ ] 在工作区内做一次普通写操作，确认 `workspace-write` 行为符合预期
 - [ ] 执行一次需审批的操作，确认 `on-request` 触发正确
-- [ ] 让助手生成 commit message，确认无 attribution 尾注
+- [ ] 让助手生成 commit message，确认无 attribution 尾注（署名由账户设置控制）
 
 #### D. 分享前安全检查
 
@@ -140,12 +135,12 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 
 官方（主来源）：
 
-- Config basics: https://developers.openai.com/codex/config-basic
-- Config reference: https://developers.openai.com/codex/config-reference
-- Config schema: https://developers.openai.com/codex/config-schema.json
+- Config basics: https://learn.chatgpt.com/docs/config-file/config-basic
+- Config reference: https://learn.chatgpt.com/docs/config-file/config-reference
+- Config schema: https://learn.chatgpt.com/docs/config-schema.json
 - Experimental context management: https://learn.chatgpt.com/docs/models#experimental-context-management
-- AGENTS.md guide: https://developers.openai.com/codex/guides/agents-md
-- Sample config: https://developers.openai.com/codex/config-sample
+- AGENTS.md guide: https://learn.chatgpt.com/docs/agent-configuration/agents-md
+- Sample config: https://learn.chatgpt.com/docs/config-file/config-sample
 
 社区（增强参考）：
 

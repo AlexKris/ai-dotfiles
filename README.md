@@ -8,9 +8,10 @@ AI coding 工具的配置分享，涵盖日常使用中沉淀的规则、脚本�
 
 Claude Code 全套配置，包括：
 
-- **settings.json** — 权限白名单/黑名单、auto mode 受保护分支规则、环境变量、attribution、theme
-- **provider-resume.zsh** — 官方订阅与备用 API provider 的同 transcript resume 函数
-- **claude-code-config-share.md** — 全套配置说明（含用户级 CLAUDE.md、StatusLine、Plugins 推荐清单）
+- **CLAUDE.md** — 用户级规则
+- **settings.json** — 权限白名单/黑名单、auto mode 受保护分支规则、模型与 effort、自动压缩窗口、环境变量、插件、attribution、theme
+- **statusline.sh** — 状态栏：模型与 effort、目录与分支、距自动压缩进度、订阅用量
+- **claude-code-config-share.md** — 全套配置说明
 
 详见 [claude-code/claude-code-config-share.md](claude-code/claude-code-config-share.md)
 
@@ -19,24 +20,49 @@ Claude Code 全套配置，包括：
 Codex 配置模板，包括：
 
 - **templates/config.toml.template** — 可分享的基础配置模板
-- **templates/openrouter.config.toml.template** — OpenRouter profile 模板
-- **templates/aihubmix.config.toml.template** — AIHubMix profile 模板
+- **templates/AGENTS.en.md / AGENTS.zh-CN.md** — 用户级 AGENTS.md（二选一）
 - **codex-best-practices.md** — Codex 配置最佳实践
 
-### 同 transcript 切换 provider
+## 新机器恢复
 
-额度用完后不新开对话，而是退出 TUI 并用备用 provider 恢复同一个本地 transcript。
+以下命令在仓库根目录执行。
 
-详见 [provider-resume-switching.md](provider-resume-switching.md)
-
-## 快速使用
+### Claude Code
 
 ```bash
-# settings.json 和 CLAUDE.md 请参考文档手动配置
+mkdir -p ~/.claude
+for f in CLAUDE.md settings.json statusline.sh; do [ -f ~/.claude/$f ] && cp ~/.claude/$f ~/.claude/$f.bak; done
+cp claude-code/CLAUDE.md claude-code/settings.json claude-code/statusline.sh ~/.claude/
+chmod +x ~/.claude/statusline.sh
 
-# Claude Code provider-resume 函数
-source /path/to/ai-dotfiles/claude-code/provider-resume.zsh
+# 插件不会自动安装：先添加 marketplace，再按 settings.json 的 enabledPlugins 安装
+claude plugin marketplace add anthropics/claude-plugins-official
+claude plugin marketplace add openai/codex-plugin-cc
+jq -r '.enabledPlugins | keys[]' ~/.claude/settings.json | xargs -n1 claude plugin install
 ```
+
+状态栏依赖 `jq`，`which jq` 找不到就先 `brew install jq`。
+
+### Codex
+
+```bash
+mkdir -p ~/.codex
+[ -f ~/.codex/AGENTS.md ] && cp ~/.codex/AGENTS.md ~/.codex/AGENTS.md.bak
+cp codex/templates/AGENTS.en.md ~/.codex/AGENTS.md   # 中文版用 AGENTS.zh-CN.md
+
+# 没有旧配置时直接复制；已有配置则手动合并模板里的设置，保留 projects 和桌面端写入的段
+[ -f ~/.codex/config.toml ] || cp codex/templates/config.toml.template ~/.codex/config.toml
+
+# Context7 key 存 macOS 钥匙串（会提示输入，不回显）
+security add-generic-password -U -s context7 -a "$USER" -w
+```
+
+自建 provider：取消模板示例 C 的注释并填写。`base_url` 是私有地址，不进仓库，从旧机器的 `~/.codex/config.toml` 复制；token 存入钥匙串：`security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w`。
+
+### 验证
+
+- Claude Code：启动后底部显示状态栏，`claude plugin list` 列出全部插件
+- Codex：TUI 里 `/mcp` 看到 context7 已连接；`codex exec "say hi"` 正常回复
 
 ## License
 
