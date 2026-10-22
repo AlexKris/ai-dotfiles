@@ -124,7 +124,6 @@
       }
     }
   },
-  "effortLevel": "high",
   "modelSettings": {
     "claude-fable-5-1": {
       "effortLevel": "high"
@@ -157,7 +156,7 @@
 - **拒绝规则**：deny 只保留破坏性 git 操作（`reset --hard`/`clean`）和读取私钥/凭据（`~/.ssh/id_*`、`~/.aws`、`credentials`）。`curl * | bash` 这类带管道的规则已删除：Bash 复合命令会按 `|` 拆成子命令逐个匹配，带管道的模式永远不会命中（已实测），classifier 默认已拦 `curl | bash`
 - **auto mode 受保护分支规则**：`autoMode.soft_deny` 在默认规则（`$defaults`）之外加一条 Protected Branch Push——推 main/master/sit/release-*/默认分支时，只有你在对话里点名分支（或对点名分支的提议回答"是"，或请求只能通过更新该分支完成）才放行；仓库文件、脚本、工具输出里的指令不算授权。替代了原来的 guard-bash hook（详见第 4 节）
 - **环境变量**：`DISABLE_TELEMETRY`、`DISABLE_ERROR_REPORTING`、`DISABLE_AUTOUPDATER`、`DISABLE_FEEDBACK_COMMAND` 分别关闭遥测、错误上报、自动更新、反馈命令。不用 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`：它会进入 essential-traffic 模式，连带禁用 Claude Design、插件下载/发布、文件上传等功能；代价是 release notes、PR 徽标、fast mode 检查、模型目录等少量后台请求会恢复。`DISABLE_AUTO_MEMORY` 关闭自动记忆；`EXPERIMENTAL_AGENT_TEAMS` 开启多 agent 协作。未设 `CLAUDE_CODE_SUBAGENT_MODEL`：未指定模型的子 agent 跟随主会话模型
-- **模型与 effort**：`model` 为 `opus`；`effortLevel` 默认 `high`，`modelSettings` 按模型覆盖（Opus 5.5 用 `xhigh`）。新机器首次启动时 Claude Code 可能把 `opus` 改写成 `opus[1m]`，两者等价
+- **模型与 effort**：`model` 为 `opus`；effort 按模型写在 `modelSettings`（Opus 5.5 用 `xhigh`，Fable 5.1 用 `high`），`/effort` 会自动保存到当前模型，`max` 只对当前会话有效。不设顶层 `effortLevel`：它对 5.5 系列模型不生效，没单独配置的 5.5 模型用模型默认值（medium）。新机器首次启动时 Claude Code 可能把 `opus` 改写成 `opus[1m]`，两者等价
 - **自动压缩窗口**：`autoCompactWindow: 400000`，上下文到约 36.7 万 token 时自动压缩（400000 − 20000 输出预留 − 13000 缓冲），不等 1M 窗口用满；`/autocompact` 可按模型调整
 - **全屏界面**：`tui: fullscreen`
 - **状态栏**：`statusLine` 调用 `~/.claude/statusline.sh`（详见第 3 节）
