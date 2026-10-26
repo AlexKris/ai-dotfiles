@@ -9,7 +9,7 @@ AI coding 工具的配置分享，涵盖日常使用中沉淀的规则、脚本�
 Claude Code 全套配置，包括：
 
 - **CLAUDE.md** — 用户级规则
-- **settings.json** — 权限白名单/黑名单、auto mode 受保护分支规则、模型与 effort、自动压缩窗口、环境变量、插件、attribution、theme
+- **settings.json** — 权限白名单/黑名单、auto mode 受保护分支规则、模型与 effort、自动压缩窗口、会话保留天数、环境变量、插件、attribution、theme
 - **statusline.sh** — 状态栏：模型与 effort、目录与分支、距自动压缩进度、订阅用量
 - **claude-code-config-share.md** — 全套配置说明
 

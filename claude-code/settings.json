@@ -71,6 +71,7 @@
     }
   },
   "autoCompactWindow": 400000,
+  "cleanupPeriodDays": 730,
   "tui": "fullscreen",
   "theme": "dark",
   "autoMode": {
