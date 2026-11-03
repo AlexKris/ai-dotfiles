@@ -50,14 +50,27 @@ mkdir -p ~/.codex
 [ -f ~/.codex/AGENTS.md ] && cp ~/.codex/AGENTS.md ~/.codex/AGENTS.md.bak
 cp codex/templates/AGENTS.en.md ~/.codex/AGENTS.md
 
-# 没有旧配置时直接复制；已有配置则手动合并模板里的设置，保留 projects 和桌面端写入的段
-[ -f ~/.codex/config.toml ] || cp codex/templates/config.toml.template ~/.codex/config.toml
+# 合并模板：保留本机的模型选择、notify、桌面端和 CLI 写入的段及 projects，其余用模板替换
+# 先退出 ChatGPT；原文件备份为 config.toml.bak；重复执行结果不变
+cfg=~/.codex/config.toml
+if [ -f "$cfg" ]; then
+  cp "$cfg" "$cfg.bak"
+  {
+    awk '/^\[/{exit} /^(model|model_reasoning_effort|plan_mode_reasoning_effort|service_tier|notify) *=/' "$cfg.bak"
+    echo
+    cat codex/templates/config.toml.template
+    echo
+    awk '/^\[/{keep = /^\[(mcp_servers\.node_repl|plugins\.|marketplaces\.|hooks\.|tui[].]|notice[].]|projects\.)/} keep' "$cfg.bak"
+  } > "$cfg"
+else
+  cp codex/templates/config.toml.template "$cfg"
+fi
 
 # Context7 key 存 macOS 钥匙串（会提示输入，不回显）
 security add-generic-password -U -s context7 -a "$USER" -w
 ```
 
-自建 provider：取消模板中 `model_provider` 和末尾 `[model_providers.<PROVIDER_ID>]` 示例的注释并填写。`base_url` 是私有地址，不进仓库，从旧机器的 `~/.codex/config.toml` 复制；token 存入钥匙串：`security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w`。
+自建 provider：合并命令不保留 provider 配置。合并后在本机配置里取消 `model_provider` 和 `[model_providers.<PROVIDER_ID>]` 示例的注释并填写，每次合并后要重新加。`base_url` 是私有地址，不进仓库，从旧机器的 `~/.codex/config.toml` 复制；token 存入钥匙串：`security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w`。
 
 ### 验证
 

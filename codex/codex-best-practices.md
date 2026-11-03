@@ -24,7 +24,7 @@
 | `approval_policy` | `on-request` | 两端 | 审批触发策略 | 交互式开发的平衡默认，避免 `never` 带来的误操作风险。 |
 | `approvals_reviewer` | `auto_review` | 两端 | 审批处理方式 | 由审查子代理收集上下文、评估风险后批准或拒绝；旧名 `guardian_subagent`（桌面端仍会写入）与之等价。 |
 | `sandbox_mode` | `workspace-write` | 两端 | 执行沙箱级别 | 允许工作区写入，默认仍受沙箱边界约束。 |
-| `model` | 未设置 | 两端 | 默认模型 | 跟随登录账号的默认模型。各账号可用模型不同，写死的模型换账号后可能不可用；桌面端可按对话切换。 |
+| `model` | 未设置 | 两端 | 默认模型 | 跟随登录账号的默认模型。各账号可用模型不同，写死的模型换账号后可能不可用；桌面端可按对话切换。CLI 里用 `/model` 选择后写入本机配置，合并模板时保留。 |
 | `model_reasoning_effort` / `plan_mode_reasoning_effort` | 未设置 | 两端 | 普通任务 / Plan 模式推理强度 | 跟随模型默认值。桌面端遇到模型不支持的强度会退回 medium，需要固定时按所用模型设置。 |
 | `service_tier` / `desktop.default-service-tier` | 未设置 | CLI / 仅桌面端 | 默认服务层级（Fast） | 不设即标准速度。Fast 消耗额度更快，需要时在界面里按对话开启。 |
 | `model_provider` | 注释 | 两端 | 默认 provider | 使用自建 provider 时取消注释，并启用模板末尾的 provider 示例。 |
@@ -38,12 +38,20 @@
 |---|---|---|---|---|
 | `mcp_servers.context7` | 已配置，官方远程服务 | 两端 | 实时文档检索 | key 存 macOS 钥匙串（service=`context7`），由 `http_headers_helper` 取出作为请求头，配置中不写明文。 |
 | `mcp_servers.openaiDeveloperDocs` | 已配置 | 两端 | OpenAI 官方文档检索 | 保留公开 MCP 地址。 |
-| `desktop` | 已同步 | 仅桌面端 | 桌面界面与任务偏好 | 包含主题、语言、队列和编辑器偏好；不设 `default-service-tier`，桌面端默认标准速度。 |
+| `desktop` | 已同步 | 仅桌面端 | 桌面界面与任务偏好 | 包含主题、语言、队列和编辑器偏好；不设 `default-service-tier`，桌面端默认标准速度；不含 Work/Codex 模式（`conversationDetailMode`），它由桌面端在切换模式时写入，合并后回到默认的 Codex 模式。 |
 | `[sandbox_workspace_write]` 细粒度字段 | 注释示例 | 两端 | 按需控制 tmp/network 行为 | 仅保留通用示例。 |
 | `[projects."<ABS_PATH>"].trust_level` | 注释示例 | 两端 | 按需信任本机项目 | 仅保留占位示例，不复制真实路径。 |
 | `[model_providers.<id>]` 及 `.auth` | 注释示例 | 两端 | 自建或第三方 provider，token 从 macOS 钥匙串读取 | 代替明文 `experimental_bearer_token`（官方不推荐）；桌面端读不到 shell 环境变量时也能用。存入或轮换 token：`security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w`。 |
 
-未同步项：自建 provider 地址与 token、本机通知脚本、真实项目路径、依赖本机安装路径的 MCP、插件与市场安装记录、模型提示状态、环境信任哈希及 hook 信任记录。其中 `tui.*` 只对 CLI 生效，其余（`notify`、`mcp_servers.node_repl`、`plugins`、`marketplaces`、`hooks.state`、`shell_environment_policy.set`）由桌面端自动写入、两端共用。已被当前 CLI 标记为移除的 `features.js_repl` 也不复制；本机该项保持原样。
+未同步项：自建 provider 地址与 token、本机通知脚本、真实项目路径、依赖本机安装路径的 MCP、插件与市场安装记录、模型提示状态及 hook 信任记录。
+- **由 CLI 写入：** `tui.*`。其中 `tui.model_availability_nux` 是"新模型可用"提示的显示次数，每个模型最多显示 4 次。
+- **由桌面端写入：** `notify`、`mcp_servers.node_repl`、`plugins`、`marketplaces`、`hooks.state`，两端共用，路径含本机用户名。
+
+合并命令会保留以上各段。
+
+以下两项会在合并时清掉：
+- `shell_environment_policy.set`：旧版桌面端写入的，现在已没有组件读取；
+- `features.js_repl`：已被当前 CLI 标记为移除。
 
 ## 3. AGENTS.md 最佳实践（用户级规则）
 
@@ -101,13 +109,17 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 
 #### B. 套用模板
 
-- [ ] 将 `templates/config.toml.template` 中的设置合并到本机 `~/.codex/config.toml`，保留已有的本机专用配置
+- [ ] 退出 ChatGPT，在仓库根目录执行 README 里的合并命令：保留本机的模型选择、`notify`、桌面端和 CLI 写入的段及 projects，其余用模板替换
 - [ ] 将 `templates/AGENTS.en.md` 复制为本机 `~/.codex/AGENTS.md`
-- [ ] 登录账号后，模型、推理强度与服务层级用账号默认值；需要固定时再在本机配置里加
+- [ ] 登录账号后，模型、推理强度与服务层级用账号默认值；需要固定时在 CLI 里用 `/model` 选择
 - [ ] 启用 context7 时，把 key 存入钥匙串：`security add-generic-password -U -s context7 -a "$USER" -w`
 - [ ] 按本机环境替换占位符 `<ABS_PATH_TO_REPO_1>`（仅在启用 `projects.trust_level` 时需要）
-- [ ] 如使用自建 provider，取消模板中 `model_provider` 和末尾 provider 示例的注释并填写；`base_url` 等私有地址不进仓库，从旧机器的 `~/.codex/config.toml` 复制，token 存入钥匙串，不在配置里写明文
-- [ ] 不复制本机的 `notify`、`mcp_servers.node_repl`、`plugins`、`marketplaces`、`hooks.state` 和 `tui` 提示状态：ChatGPT 桌面端会自动写入；项目信任在首次打开项目时由 Codex 询问
+- [ ] 如使用自建 provider：
+  - 合并命令不保留 provider 配置，每次合并后都要重新加；
+  - 合并后在本机配置里取消 `model_provider` 和末尾 provider 示例的注释并填写；
+  - `base_url` 等私有地址不进仓库，从旧机器的 `~/.codex/config.toml` 复制；
+  - token 存入钥匙串，不在配置里写明文。
+- [ ] 新机器上的项目信任，在首次打开项目时由 Codex 询问
 
 #### C. 功能验证
 

@@ -1,3 +1,6 @@
+# Settings shared by every Mac. Apply with the merge command in README.md, which keeps
+# each Mac's model choices, notify, desktop/CLI-written tables and projects.
+
 commit_attribution = ""
 
 # model_provider = "<PROVIDER_ID>"
@@ -22,7 +25,6 @@ localeOverride = "en-US"
 followUpQueueMode = "queue"
 dock-icon-preference = "app-default"
 keepRemoteControlAwakeWhilePluggedIn = true
-conversationDetailMode = "STEPS_COMMANDS"
 enabled-reasoning-efforts = ["low", "medium", "high", "xhigh", "ultra", "max"]
 confirm-before-close = "never"
 
