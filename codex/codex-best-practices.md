@@ -1,6 +1,6 @@
 # Codex 配置最佳实践（分享版）
 
-最后校验日期：2026-10-22（Asia/Shanghai，Codex CLI 0.163.0）
+最后校验日期：2026-11-03（Asia/Shanghai，Codex CLI 0.166.0）
 
 ## 1. 目标与边界
 
@@ -24,13 +24,13 @@
 | `approval_policy` | `on-request` | 两端 | 审批触发策略 | 交互式开发的平衡默认，避免 `never` 带来的误操作风险。 |
 | `approvals_reviewer` | `auto_review` | 两端 | 审批处理方式 | 由审查子代理收集上下文、评估风险后批准或拒绝；旧名 `guardian_subagent`（桌面端仍会写入）与之等价。 |
 | `sandbox_mode` | `workspace-write` | 两端 | 执行沙箱级别 | 允许工作区写入，默认仍受沙箱边界约束。 |
-| `model` | `gpt-6-astra` | 两端 | 默认模型 | 保留本机选择，使用前按账户可用模型调整；桌面端可按对话切换。 |
-| `model_reasoning_effort` / `plan_mode_reasoning_effort` | `xhigh` / `ultra` | 两端 | 普通任务 / Plan 模式推理强度 | 保留本机偏好，按任务调整。 |
-| `service_tier` | `priority` | CLI | 默认服务层级（Fast） | 桌面端用 `desktop.default-service-tier`。经自建 provider 时，响应里的 `service_tier` 始终是 `default`，不能据此判断，以输出速度为准。 |
+| `model` | 未设置 | 两端 | 默认模型 | 跟随登录账号的默认模型。各账号可用模型不同，写死的模型换账号后可能不可用；桌面端可按对话切换。 |
+| `model_reasoning_effort` / `plan_mode_reasoning_effort` | 未设置 | 两端 | 普通任务 / Plan 模式推理强度 | 跟随模型默认值。桌面端遇到模型不支持的强度会退回 medium，需要固定时按所用模型设置。 |
+| `service_tier` / `desktop.default-service-tier` | 未设置 | CLI / 仅桌面端 | 默认服务层级（Fast） | 不设即标准速度。Fast 消耗额度更快，需要时在界面里按对话开启。 |
 | `model_provider` | 注释 | 两端 | 默认 provider | 使用自建 provider 时取消注释，并启用模板末尾的 provider 示例。 |
 | `features.daemon_auto_start` | `false` | CLI | CLI 常驻服务自动启动 | 0.163.0 默认开启，这里显式关闭。 |
 
-模型与推理强度属于可分享偏好，本次按同步要求保留；其他使用者应按自己的账户和任务调整。
+模型、推理强度和服务层级都不写进模板，由登录账号和所用模型决定；需要固定时只在本机配置里加。
 
 ### 2.2 工具与桌面设置
 
@@ -38,7 +38,7 @@
 |---|---|---|---|---|
 | `mcp_servers.context7` | 已配置，官方远程服务 | 两端 | 实时文档检索 | key 存 macOS 钥匙串（service=`context7`），由 `http_headers_helper` 取出作为请求头，配置中不写明文。 |
 | `mcp_servers.openaiDeveloperDocs` | 已配置 | 两端 | OpenAI 官方文档检索 | 保留公开 MCP 地址。 |
-| `desktop` | 已同步 | 仅桌面端 | 桌面界面与任务偏好 | 包含主题、语言、队列和编辑器偏好；桌面服务层级保留为 `priority`。 |
+| `desktop` | 已同步 | 仅桌面端 | 桌面界面与任务偏好 | 包含主题、语言、队列和编辑器偏好；不设 `default-service-tier`，桌面端默认标准速度。 |
 | `[sandbox_workspace_write]` 细粒度字段 | 注释示例 | 两端 | 按需控制 tmp/network 行为 | 仅保留通用示例。 |
 | `[projects."<ABS_PATH>"].trust_level` | 注释示例 | 两端 | 按需信任本机项目 | 仅保留占位示例，不复制真实路径。 |
 | `[model_providers.<id>]` 及 `.auth` | 注释示例 | 两端 | 自建或第三方 provider，token 从 macOS 钥匙串读取 | 代替明文 `experimental_bearer_token`（官方不推荐）；桌面端读不到 shell 环境变量时也能用。存入或轮换 token：`security add-generic-password -U -s <KEYCHAIN_SERVICE> -a "$USER" -w`。 |
@@ -103,7 +103,7 @@ rg -n --hidden -S "(api[_-]?key|token|secret|password|ctx7sk-|sk-[A-Za-z0-9]{20,
 
 - [ ] 将 `templates/config.toml.template` 中的设置合并到本机 `~/.codex/config.toml`，保留已有的本机专用配置
 - [ ] 将 `templates/AGENTS.en.md` 复制为本机 `~/.codex/AGENTS.md`
-- [ ] 按账户和任务检查模板中的模型、推理强度与服务层级
+- [ ] 登录账号后，模型、推理强度与服务层级用账号默认值；需要固定时再在本机配置里加
 - [ ] 启用 context7 时，把 key 存入钥匙串：`security add-generic-password -U -s context7 -a "$USER" -w`
 - [ ] 按本机环境替换占位符 `<ABS_PATH_TO_REPO_1>`（仅在启用 `projects.trust_level` 时需要）
 - [ ] 如使用自建 provider，取消模板中 `model_provider` 和末尾 provider 示例的注释并填写；`base_url` 等私有地址不进仓库，从旧机器的 `~/.codex/config.toml` 复制，token 存入钥匙串，不在配置里写明文

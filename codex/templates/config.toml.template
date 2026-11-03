@@ -1,9 +1,5 @@
 commit_attribution = ""
 
-model = "gpt-6-astra"
-model_reasoning_effort = "xhigh"
-plan_mode_reasoning_effort = "ultra"
-service_tier = "priority"
 # model_provider = "<PROVIDER_ID>"
 
 approval_policy = "on-request"
@@ -23,7 +19,6 @@ url = "https://developers.openai.com/mcp"
 [desktop]
 appearanceTheme = "system"
 localeOverride = "en-US"
-default-service-tier = "priority"
 followUpQueueMode = "queue"
 dock-icon-preference = "app-default"
 keepRemoteControlAwakeWhilePluggedIn = true
